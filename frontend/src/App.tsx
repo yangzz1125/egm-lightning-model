@@ -274,7 +274,7 @@ function App() {
       }
     })
 
-  }, [egmState, ho])
+  }, [egmState, ho, zoom, leftTilt, rightTilt])
 
 
   return (

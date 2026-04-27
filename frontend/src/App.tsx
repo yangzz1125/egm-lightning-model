@@ -35,7 +35,7 @@ function App() {
   
   const [hs, setHs] = useState<number>(54.0)
   const [xs, setXs] = useState<number>(-2.05)
-  const [Umax, setUmax] = useState<number>(408.2)
+  const [Unominal, setUnominal] = useState<number>(500.0)
   const [leftTilt, setLeftTilt] = useState<number>(0.0)
   const [rightTilt, setRightTilt] = useState<number>(0.0)
   
@@ -77,7 +77,7 @@ function App() {
             side: side,
             h_s: hs,
             x_s: xs,
-            U_max: Umax,
+            U_max: Unominal * Math.sqrt(2) / Math.sqrt(3),
             left_ground_tilt_deg: leftTilt,
             right_ground_tilt_deg: rightTilt,
             phase_x_positions: parseFloats(phaseXStr),
@@ -108,7 +108,7 @@ function App() {
       }
     }
     fetchEGM()
-  }, [ICurrent, ho, side, hs, xs, Umax, leftTilt, rightTilt, phaseXStr, phaseHStr, phaseHavStr])
+  }, [ICurrent, ho, side, hs, xs, Unominal, leftTilt, rightTilt, phaseXStr, phaseHStr, phaseHavStr])
 
   // Canvas 绘制逻辑
   useEffect(() => {
@@ -339,8 +339,8 @@ function App() {
               <input type="number" step="0.1" value={xs} onChange={e => setXs(parseFloat(e.target.value) || 0)} style={{ width: '100%', boxSizing: 'border-box', padding: '0.4rem', border: '1px solid #dfe6e9', borderRadius: '4px' }} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <label style={{ color: '#636e72', marginBottom: '0.2rem' }}>运行电压 (kV)</label>
-              <input type="number" step="1" value={Umax} onChange={e => setUmax(parseFloat(e.target.value) || 0)} style={{ width: '100%', boxSizing: 'border-box', padding: '0.4rem', border: '1px solid #dfe6e9', borderRadius: '4px' }} />
+              <label style={{ color: '#636e72', marginBottom: '0.2rem' }}>额定电压 (kV)</label>
+              <input type="number" step="1" value={Unominal} onChange={e => setUnominal(parseFloat(e.target.value) || 0)} style={{ width: '100%', boxSizing: 'border-box', padding: '0.4rem', border: '1px solid #dfe6e9', borderRadius: '4px' }} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gridColumn: 'span 2' }}>
               <label style={{ color: '#636e72', marginBottom: '0.2rem' }}>左侧倾角 (°)</label>

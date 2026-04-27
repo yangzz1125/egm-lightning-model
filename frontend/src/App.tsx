@@ -7,6 +7,7 @@ interface PhaseInfo {
   x: number
   h: number
   rc: number
+  rg: number
   exposed_length: number
   has_exposure: boolean
   x_rc: number[]
@@ -144,20 +145,35 @@ function App() {
     // SVG/Canvas Y轴向下，数学Y轴向上，所以要做反转
     const toScrY = (valY: number) => height - (yOffset + (valY - mathMinY) * scale)
 
-    // 画地面（假设水平地面，简单画一条线）
-    const groundScrY = toScrY(0)
+    // 计算对应 x 的实际地面高度
+    const getTerrainY = (valX: number) => {
+      if (valX < 0) {
+         return -valX * Math.tan(leftTilt * Math.PI / 180)
+      } else {
+         return valX * Math.tan(rightTilt * Math.PI / 180)
+      }
+    }
+
+    // 画地面（考虑地面倾角）
     ctx.beginPath()
-    ctx.moveTo(0, groundScrY)
-    ctx.lineTo(width, groundScrY)
+    for (let px = 0; px <= width; px += 5) {
+      const mathX = mathMinX + (px / scale)
+      const mathY = getTerrainY(mathX)
+      if (px === 0) ctx.moveTo(px, toScrY(mathY))
+      else ctx.lineTo(px, toScrY(mathY))
+    }
     ctx.strokeStyle = '#555'
     ctx.lineWidth = 2
     ctx.stroke()
 
-    // 绘制地物抬升
-    const hoScrY = toScrY(ho)
+    // 绘制地物抬升（考虑地面倾角）
     ctx.beginPath()
-    ctx.moveTo(0, hoScrY)
-    ctx.lineTo(width, hoScrY)
+    for (let px = 0; px <= width; px += 5) {
+      const mathX = mathMinX + (px / scale)
+      const mathY = getTerrainY(mathX) + ho
+      if (px === 0) ctx.moveTo(px, toScrY(mathY))
+      else ctx.lineTo(px, toScrY(mathY))
+    }
     ctx.strokeStyle = '#d35400'
     ctx.setLineDash([10, 10])
     ctx.lineWidth = 2
@@ -166,9 +182,10 @@ function App() {
 
     // 绘制干塔
     const towerX = toScrX(0)
+    const towerBaseY = toScrY(getTerrainY(0))
     const hsScrY = toScrY(egmState.summary.h_s)
     ctx.beginPath()
-    ctx.moveTo(towerX, groundScrY)
+    ctx.moveTo(towerX, towerBaseY)
     ctx.lineTo(towerX, hsScrY)
     ctx.strokeStyle = 'rgba(128, 128, 128, 0.4)'
     ctx.lineWidth = 14
@@ -208,6 +225,20 @@ function App() {
       ctx.strokeStyle = phase.color
       ctx.lineWidth = 0.5
       ctx.setLineDash([5, 5])
+      ctx.stroke()
+      ctx.setLineDash([])
+
+      // 绘制对应相的地物抬升后的大地保护线 (terrainY + ho + rg)
+      ctx.beginPath()
+      for (let scX = 0; scX <= width; scX += 10) {
+        const mathX = mathMinX + (scX / scale)
+        const mathY = getTerrainY(mathX) + ho + phase.rg
+        if (scX === 0) ctx.moveTo(scX, toScrY(mathY))
+        else ctx.lineTo(scX, toScrY(mathY))
+      }
+      ctx.strokeStyle = phase.color
+      ctx.lineWidth = 1
+      ctx.setLineDash([15, 5, 3, 5]) // 使用点划线区分
       ctx.stroke()
       ctx.setLineDash([])
 
@@ -365,7 +396,8 @@ function App() {
             {egmState.phases.map(p => (
                <div key={`legend-${p.name}`} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}><div style={{ width: '14px', height: '14px', borderRadius: '50%', background: p.color }}></div> {p.name} 及击距轨迹</div>
             ))}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}><div style={{ width: '16px', height: '3px', background: '#d35400', borderStyle: 'dashed' }}></div> 地物抬升限界</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}><div style={{ width: '16px', height: '3px', background: '#d35400', borderStyle: 'dashed' }}></div> 地物抬升限界 (h_o)</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}><div style={{ width: '16px', height: '1px', borderTop: '2px solid #555', borderStyle: 'none none dashed none' }}></div> 各相大地保护线 (h_o + rg)</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}><div style={{ width: '16px', height: '3px', background: '#e74c3c' }}></div> 雷击暴露弧</div>
           </div>
         )}

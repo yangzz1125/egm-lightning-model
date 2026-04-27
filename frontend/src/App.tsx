@@ -156,6 +156,7 @@ function App() {
     const yOffset = 0 - pan.y
 
     const toScrX = (valX: number) => xOffset + (valX - mathMinX) * scale
+    const fromScrX = (px: number) => mathMinX + (px - xOffset) / scale
     // SVG/Canvas Y轴向下，数学Y轴向上，所以要做反转
     const toScrY = (valY: number) => height - (yOffset + (valY - mathMinY) * scale)
 
@@ -171,7 +172,7 @@ function App() {
     // 画地面（考虑地面倾角）
     ctx.beginPath()
     for (let px = 0; px <= width; px += 5) {
-      const mathX = mathMinX + (px / scale)
+      const mathX = fromScrX(px)
       const mathY = getTerrainY(mathX)
       if (px === 0) ctx.moveTo(px, toScrY(mathY))
       else ctx.lineTo(px, toScrY(mathY))
@@ -183,7 +184,7 @@ function App() {
     // 绘制地物抬升（考虑地面倾角）
     ctx.beginPath()
     for (let px = 0; px <= width; px += 5) {
-      const mathX = mathMinX + (px / scale)
+      const mathX = fromScrX(px)
       const mathY = getTerrainY(mathX) + ho
       if (px === 0) ctx.moveTo(px, toScrY(mathY))
       else ctx.lineTo(px, toScrY(mathY))
@@ -245,7 +246,7 @@ function App() {
       // 绘制对应相的地物抬升后的大地保护线 (terrainY + ho + rg)
       ctx.beginPath()
       for (let scX = 0; scX <= width; scX += 10) {
-        const mathX = mathMinX + (scX / scale)
+        const mathX = fromScrX(scX)
         const mathY = getTerrainY(mathX) + ho + phase.rg
         if (scX === 0) ctx.moveTo(scX, toScrY(mathY))
         else ctx.lineTo(scX, toScrY(mathY))

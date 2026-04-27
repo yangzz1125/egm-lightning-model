@@ -47,6 +47,11 @@ function App() {
   const [maxBackflash, setMaxBackflash] = useState<number | null>(null)
   const [zoom, setZoom] = useState<number>(1.0)
   
+  // 拖拽移动状态
+  const [pan, setPan] = useState({ x: 0, y: 0 })
+  const [isDragging, setIsDragging] = useState(false)
+  const lastMousePos = useRef({ x: 0, y: 0 })
+  
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   const toggleSide = (newSide: string) => {
@@ -145,9 +150,10 @@ function App() {
     const scaleY = height / (mathMaxY - mathMinY)
     const scale = Math.min(scaleX, scaleY) * zoom
 
-    // X 轴居中，Y 轴底部对齐（地面固定在下方）
-    const xOffset = (width - (mathMaxX - mathMinX) * scale) / 2
-    const yOffset = 0
+    // X 轴居中，加上鼠标拖拽的 pan.x
+    const xOffset = (width - (mathMaxX - mathMinX) * scale) / 2 + pan.x
+    // Y 轴底部对齐，加上鼠标拖拽的 pan.y
+    const yOffset = 0 - pan.y
 
     const toScrX = (valX: number) => xOffset + (valX - mathMinX) * scale
     // SVG/Canvas Y轴向下，数学Y轴向上，所以要做反转
@@ -274,7 +280,7 @@ function App() {
       }
     })
 
-  }, [egmState, ho, zoom, leftTilt, rightTilt])
+  }, [egmState, ho, zoom, leftTilt, rightTilt, pan])
 
 
   return (
@@ -388,11 +394,24 @@ function App() {
 
       {/* 右侧绘图区 */}
       <div 
-        style={{ flex: 1, position: 'relative', overflow: 'hidden', padding: '1.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+        style={{ flex: 1, position: 'relative', overflow: 'hidden', padding: '1.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: isDragging ? 'grabbing' : 'grab' }}
         onWheel={(e) => {
           // 滚轮缩放画布
           setZoom(prev => Math.max(0.1, Math.min(prev * (1 - e.deltaY * 0.001), 5.0)))
         }}
+        onMouseDown={(e) => {
+          setIsDragging(true)
+          lastMousePos.current = { x: e.clientX, y: e.clientY }
+        }}
+        onMouseMove={(e) => {
+          if (!isDragging) return
+          const dx = e.clientX - lastMousePos.current.x
+          const dy = e.clientY - lastMousePos.current.y
+          setPan(prev => ({ x: prev.x + dx, y: prev.y + dy }))
+          lastMousePos.current = { x: e.clientX, y: e.clientY }
+        }}
+        onMouseUp={() => setIsDragging(false)}
+        onMouseLeave={() => setIsDragging(false)}
       >
         <canvas 
           ref={canvasRef}
@@ -404,7 +423,7 @@ function App() {
         {/* 缩放控件悬浮窗 */}
         <div style={{ position: 'absolute', bottom: '2.5rem', right: '3rem', display: 'flex', gap: '0.5rem', background: 'rgba(255, 255, 255, 0.9)', padding: '0.5rem', borderRadius: '8px', border: '1px solid #dfe6e9', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
            <button onClick={() => setZoom(z => Math.min(z * 1.2, 5.0))} style={{ border: 'none', background: '#f1f2f6', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>放大 (+)</button>
-           <button onClick={() => setZoom(1.0)} style={{ border: 'none', background: '#f1f2f6', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>{(zoom * 100).toFixed(0)}%</button>
+           <button onClick={() => { setZoom(1.0); setPan({x: 0, y: 0}) }} style={{ border: 'none', background: '#f1f2f6', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>{(zoom * 100).toFixed(0)}% (复原)</button>
            <button onClick={() => setZoom(z => Math.max(z / 1.2, 0.1))} style={{ border: 'none', background: '#f1f2f6', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>缩小 (-)</button>
         </div>
         

@@ -79,12 +79,12 @@ function App() {
         }
         
         const [res, maxRes] = await Promise.all([
-          fetch('http://localhost:8000/api/v1/egm/calculate_state', {
+          fetch('/api/v1/egm/calculate_state', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
           }),
-          fetch('http://localhost:8000/api/v1/egm/max_backflash', {
+          fetch('/api/v1/egm/max_backflash', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)

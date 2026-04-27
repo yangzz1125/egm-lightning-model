@@ -45,6 +45,7 @@ function App() {
   
   const [egmState, setEgmState] = useState<EGMState | null>(null)
   const [maxBackflash, setMaxBackflash] = useState<number | null>(null)
+  const [zoom, setZoom] = useState<number>(1.0)
   
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -142,7 +143,7 @@ function App() {
     // 坐标映射（保持 1:1 比例，图形才不畸变）
     const scaleX = width / (mathMaxX - mathMinX)
     const scaleY = height / (mathMaxY - mathMinY)
-    const scale = Math.min(scaleX, scaleY)
+    const scale = Math.min(scaleX, scaleY) * zoom
 
     // X 轴居中，Y 轴底部对齐（地面固定在下方）
     const xOffset = (width - (mathMaxX - mathMinX) * scale) / 2
@@ -282,8 +283,7 @@ function App() {
       {/* 左侧控制区与信息区 */}
       <div style={{ width: '450px', padding: '2rem', borderRight: '1px solid #dfe6e9', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', gap: '2rem', overflowY: 'auto' }}>
         <div>
-          <h2 style={{ margin: '0 0 0.5rem 0' }}>EGM 几何模型 (专业版)</h2>
-          <p style={{ color: '#636e72', fontSize: '0.9rem', margin: 0 }}>基于现代 Web 渲染技术与标准化 AI API。</p>
+          <h2 style={{ margin: '0' }}>EGM 几何模型</h2>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -387,13 +387,26 @@ function App() {
       </div>
 
       {/* 右侧绘图区 */}
-      <div style={{ flex: 1, position: 'relative', overflow: 'hidden', padding: '1.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+      <div 
+        style={{ flex: 1, position: 'relative', overflow: 'hidden', padding: '1.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+        onWheel={(e) => {
+          // 滚轮缩放画布
+          setZoom(prev => Math.max(0.1, Math.min(prev * (1 - e.deltaY * 0.001), 5.0)))
+        }}
+      >
         <canvas 
           ref={canvasRef}
           width={1200}
           height={850}
           style={{ width: '100%', height: '100%', background: '#ffffff', borderRadius: '12px', boxShadow: '0 8px 32px rgba(0,0,0,0.08)' }}
         />
+        
+        {/* 缩放控件悬浮窗 */}
+        <div style={{ position: 'absolute', bottom: '2.5rem', right: '3rem', display: 'flex', gap: '0.5rem', background: 'rgba(255, 255, 255, 0.9)', padding: '0.5rem', borderRadius: '8px', border: '1px solid #dfe6e9', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+           <button onClick={() => setZoom(z => Math.min(z * 1.2, 5.0))} style={{ border: 'none', background: '#f1f2f6', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>放大 (+)</button>
+           <button onClick={() => setZoom(1.0)} style={{ border: 'none', background: '#f1f2f6', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>{(zoom * 100).toFixed(0)}%</button>
+           <button onClick={() => setZoom(z => Math.max(z / 1.2, 0.1))} style={{ border: 'none', background: '#f1f2f6', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>缩小 (-)</button>
+        </div>
         
         {/* 图例 */}
         {egmState && (

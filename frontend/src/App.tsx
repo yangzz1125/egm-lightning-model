@@ -116,19 +116,26 @@ function App() {
     const height = canvas.height
     ctx.clearRect(0, 0, width, height)
 
-    // 数据范围
-    const [minX, maxX, , maxY] = egmState.bounds
-    const margin = 8
+    // 固定视口比例：无论雷电流怎么变，画布坐标系只基于杆塔物理尺寸和 10kA 时的近似击距来锚定
+    // 这样能够保证塔和导线大小绝对固定，不会忽大忽小
+    const fixed_rs = 45 // 10kA 时的典型击距 (约 44.6m)
+    const margin = 10
 
-    // 强制画布左右完全对称，这样塔(X=0)将永远钉在屏幕正中央！
-    // 也能直观感受到地线在左边和右边物理位置跳跃的差异了。
-    const maxAbsX = Math.max(Math.abs(minX - margin), Math.abs(maxX + margin))
+    let maxPhaseAbsX = 0
+    let maxPhaseH = egmState.summary.h_s
+    egmState.phases.forEach(p => {
+       maxPhaseAbsX = Math.max(maxPhaseAbsX, Math.abs(p.x))
+       maxPhaseH = Math.max(maxPhaseH, p.h)
+    })
+
+    // 强制画布左右完全对称，保证塔永远在正中央
+    const maxAbsX = Math.max(maxPhaseAbsX + fixed_rs, Math.abs(egmState.summary.shield_center_x) + fixed_rs) + margin
     const mathMinX = -maxAbsX
     const mathMaxX = maxAbsX
 
-    // 固定Y轴原点为地面（Y=0），防止切换左右侧时地面上下跳动
-    // bottomPad 控制地面距画布底部的留白高度（单位：米）
-    const bottomPad = 20
+    // 固定Y轴原点为地面（Y=0），并保证能看到地物和塔顶上方的击距圆弧（按 10kA 大小预留空间）
+    const bottomPad = 25
+    const maxY = Math.max(maxPhaseH + fixed_rs, ho + fixed_rs)
     const mathMinY = -bottomPad
     const mathMaxY = maxY + margin
 
